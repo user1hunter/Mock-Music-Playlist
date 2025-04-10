@@ -1,5 +1,9 @@
 package com.example.playlistapp.payload;
 
-public class SignupRequest {
+import lombok.Data;
 
+@Data
+public class SignupRequest {
+  private String username;
+  private String password;
 }
