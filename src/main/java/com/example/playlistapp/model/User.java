@@ -22,10 +22,6 @@ public class User {
 
   private String password;
 
-  @ElementCollection(fetch = FetchType.EAGER)
-  @Enumerated(EnumType.STRING)
-  private Set<Role> roles = new HashSet<>();
-
   // Optional: playlists owned by the user
   @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
   private Set<Playlist> playlists = new HashSet<>();

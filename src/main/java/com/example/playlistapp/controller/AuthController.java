@@ -1,6 +1,5 @@
 package com.example.playlistapp.controller;
 
-import com.example.playlistapp.model.Role;
 import com.example.playlistapp.model.User;
 import com.example.playlistapp.payload.JwtResponse;
 import com.example.playlistapp.payload.LoginRequest;
@@ -16,7 +15,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -53,8 +51,6 @@ public class AuthController {
     User user = new User();
     user.setUsername(signupRequest.getUsername());
     user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
-    user.setRoles(Collections.singleton(Role.ROLE_USER));
-
     userRepository.save(user);
 
     return ResponseEntity.ok("User registered successfully!");
