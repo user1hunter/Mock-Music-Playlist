@@ -23,16 +23,11 @@ A simple RESTful app built with Spring Boot, using:
 
 2. Run it:
 
-3. H2 Console:
-
-- URL: `http://localhost:8080/h2-console`
-- JDBC URL: `jdbc:h2:mem:testdb`
-
 ## 🔐 Authentication
-
-- Login: `/api/auth/login`
-- Register: `/api/auth/register`
-- Use JWT token in `Authorization: Bearer <token>` for secured endpoints
+- Go to Swagger Page http://localhost:8080/swagger-ui/index.html *Refer to swagger for Request Body
+- Register: `/api/auth/register` *Enter any username and password
+- Login: `/api/auth/login` *Copy the JWT
+- Use JWT token in Header `Authorization: Bearer <token>` for secured endpoints
 
 ## 📬 Endpoints
 
@@ -43,6 +38,12 @@ A simple RESTful app built with Spring Boot, using:
 | GET    | /api/playlists/{id} | Get a playlist by ID |
 | PUT    | /api/playlists/{id} | Update playlist      |
 | DELETE | /api/playlists/{id} | Delete playlist      |
+
+3. H2 Console:
+- Use H2 Console to verify data
+- URL: `http://localhost:8080/h2-console`
+- JDBC URL: `jdbc:h2:mem:testdb`
+
 
 ## 🗒️ Notes
 
