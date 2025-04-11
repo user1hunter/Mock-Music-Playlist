@@ -35,12 +35,12 @@ public class PlaylistController {
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<Playlist> getById(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+  public ResponseEntity<PlaylistDTO> getById(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
     Playlist playlist = playlistRepository.findById(id).orElseThrow(EntityNotFoundException::new);
     if (!playlist.getOwner().getUsername().equals(userDetails.getUsername())) {
       return ResponseEntity.status(403).build();
     }
-    return ResponseEntity.ok(playlist);
+    return ResponseEntity.ok(new PlaylistDTO(playlist));
   }
 
   @PutMapping("/{id}")
