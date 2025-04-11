@@ -7,6 +7,7 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "playlists") // 'playlist' is a reserved word in some SQL dialects
 public class Playlist {
 
   @Id
