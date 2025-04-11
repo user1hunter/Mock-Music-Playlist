@@ -1,5 +1,6 @@
 package com.example.playlistapp.controller;
 
+import com.example.playlistapp.dto.PlaylistDTO;
 import com.example.playlistapp.model.*;
 import com.example.playlistapp.repository.*;
 import jakarta.persistence.*;
@@ -26,10 +27,11 @@ public class PlaylistController {
   }
 
   @PostMapping
-  public Playlist createPlaylist(@RequestBody Playlist playlist, @AuthenticationPrincipal UserDetails userDetails) {
+  public ResponseEntity<PlaylistDTO> createPlaylist(@RequestBody Playlist playlist, @AuthenticationPrincipal UserDetails userDetails) {
     com.example.playlistapp.model.User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
     playlist.setOwner(user);
-    return playlistRepository.save(playlist);
+    Playlist savedPlaylist = playlistRepository.save(playlist);
+    return ResponseEntity.ok(new PlaylistDTO(savedPlaylist));
   }
 
   @GetMapping("/{id}")

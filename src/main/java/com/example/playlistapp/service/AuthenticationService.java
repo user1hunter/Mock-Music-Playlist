@@ -1,6 +1,5 @@
 package com.example.playlistapp.service;
 
-import com.example.playlistapp.model.Role;
 import com.example.playlistapp.model.User;
 import com.example.playlistapp.payload.LoginRequest;
 import com.example.playlistapp.payload.SignupRequest;
@@ -12,8 +11,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Collections;
 
 @Service
 public class AuthenticationService {
@@ -40,7 +37,6 @@ public class AuthenticationService {
     User user = new User();
     user.setUsername(signupRequest.getUsername());
     user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
-    user.setRoles(Collections.singleton(Role.ROLE_USER));
     userRepository.save(user);
 
     return "User registered successfully!";
