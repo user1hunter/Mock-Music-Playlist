@@ -1,5 +1,10 @@
 package com.example.playlistapp.payload;
 
-public class LoginRequest {
+import lombok.Data;
 
+@Data
+
+public class LoginRequest {
+  private String username;
+  private String password;
 }
