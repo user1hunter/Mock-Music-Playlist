@@ -27,7 +27,8 @@ public class PlaylistController {
   }
 
   @PostMapping
-  public ResponseEntity<PlaylistDTO> createPlaylist(@RequestBody Playlist playlist, @AuthenticationPrincipal UserDetails userDetails) {
+  public ResponseEntity<PlaylistDTO> createPlaylist(@RequestBody Playlist playlist,
+      @AuthenticationPrincipal UserDetails userDetails) {
     com.example.playlistapp.model.User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
     playlist.setOwner(user);
     Playlist savedPlaylist = playlistRepository.save(playlist);
@@ -44,7 +45,7 @@ public class PlaylistController {
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<Playlist> updatePlaylist(@PathVariable Long id, @RequestBody Playlist updatedPlaylist,
+  public ResponseEntity<PlaylistDTO> updatePlaylist(@PathVariable Long id, @RequestBody Playlist updatedPlaylist,
       @AuthenticationPrincipal UserDetails userDetails) {
     Playlist playlist = playlistRepository.findById(id).orElseThrow(EntityNotFoundException::new);
     if (!playlist.getOwner().getUsername().equals(userDetails.getUsername())) {
@@ -54,7 +55,8 @@ public class PlaylistController {
     playlist.setName(updatedPlaylist.getName());
     playlist.setDescription(updatedPlaylist.getDescription());
 
-    return ResponseEntity.ok(playlistRepository.save(playlist));
+    Playlist saved = playlistRepository.save(playlist);
+    return ResponseEntity.ok(new PlaylistDTO(saved));
   }
 
   @DeleteMapping("/{id}")
