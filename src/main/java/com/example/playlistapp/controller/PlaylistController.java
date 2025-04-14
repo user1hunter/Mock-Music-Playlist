@@ -3,7 +3,6 @@ package com.example.playlistapp.controller;
 import com.example.playlistapp.dto.PlaylistDTO;
 import com.example.playlistapp.model.*;
 import com.example.playlistapp.repository.*;
-import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.*;
@@ -11,6 +10,7 @@ import org.springframework.security.core.userdetails.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/playlists")
@@ -23,10 +23,16 @@ public class PlaylistController {
   private final UserRepository userRepository;
 
   @GetMapping
-  public List<Playlist> getAllPlaylists(@AuthenticationPrincipal UserDetails userDetails) {
+  public List<PlaylistDTO> getAllPlaylists(@AuthenticationPrincipal UserDetails userDetails) {
     try {
-      com.example.playlistapp.model.User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
-      return user.getPlaylists().stream().toList();
+      Long ownerId = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"))
+                .getId();
+
+      return playlistRepository.findByOwnerId(ownerId).stream()
+                .map(PlaylistDTO::new)
+                .collect(Collectors.toList());
+
     } catch (Exception e) {
       logger.error("Error fetching playlists", e);
       throw new RuntimeException("Error fetching playlists");
@@ -37,8 +43,11 @@ public class PlaylistController {
   public ResponseEntity<PlaylistDTO> createPlaylist(@RequestBody Playlist playlist,
       @AuthenticationPrincipal UserDetails userDetails) {
     try {
-      com.example.playlistapp.model.User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
-      playlist.setOwner(user);
+      Long ownerId = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"))
+                .getId();
+                
+      playlist.setOwnerId(ownerId);
       Playlist savedPlaylist = playlistRepository.save(playlist);
       return ResponseEntity.ok(new PlaylistDTO(savedPlaylist));
     } catch (Exception e) {
@@ -50,10 +59,17 @@ public class PlaylistController {
   @GetMapping("/{id}")
   public ResponseEntity<PlaylistDTO> getById(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
     try {
-      Playlist playlist = playlistRepository.findById(id).orElseThrow(EntityNotFoundException::new);
-      if (!playlist.getOwner().getUsername().equals(userDetails.getUsername())) {
-        return ResponseEntity.status(403).build();
+      Playlist playlist = playlistRepository.findById(id)
+          .orElseThrow(() -> new RuntimeException("Playlist not found"));
+
+      Long ownerId = userRepository.findByUsername(userDetails.getUsername())
+          .orElseThrow(() -> new RuntimeException("User not found"))
+          .getId();
+
+      if (!playlist.getOwnerId().equals(ownerId)) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
       }
+
       return ResponseEntity.ok(new PlaylistDTO(playlist));
     } catch (Exception e) {
       logger.error("Error fetching playlist", e);
@@ -65,11 +81,16 @@ public class PlaylistController {
   public ResponseEntity<PlaylistDTO> updatePlaylist(@PathVariable Long id, @RequestBody Playlist updatedPlaylist,
       @AuthenticationPrincipal UserDetails userDetails) {
     try {
-      Playlist playlist = playlistRepository.findById(id).orElseThrow(EntityNotFoundException::new);
-      if (!playlist.getOwner().getUsername().equals(userDetails.getUsername())) {
-        return ResponseEntity.status(403).build();
-      }
+      Playlist playlist = playlistRepository.findById(id)
+          .orElseThrow(() -> new RuntimeException("Playlist not found"));
 
+      Long ownerId = userRepository.findByUsername(userDetails.getUsername())
+          .orElseThrow(() -> new RuntimeException("User not found"))
+          .getId();
+
+      if (!playlist.getOwnerId().equals(ownerId)) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+      }
       playlist.setName(updatedPlaylist.getName());
       playlist.setDescription(updatedPlaylist.getDescription());
 
@@ -84,11 +105,20 @@ public class PlaylistController {
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deletePlaylist(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
     try {
-      Playlist playlist = playlistRepository.findById(id).orElseThrow(EntityNotFoundException::new);
-      if (!playlist.getOwner().getUsername().equals(userDetails.getUsername())) {
-        return ResponseEntity.status(403).build();
+      // Fetch the playlist by ID
+      Playlist playlist = playlistRepository.findById(id)
+          .orElseThrow(() -> new RuntimeException("Playlist not found"));
+
+      // Verify that the authenticated user is the owner of the playlist
+      Long ownerId = userRepository.findByUsername(userDetails.getUsername())
+          .orElseThrow(() -> new RuntimeException("User not found"))
+          .getId();
+
+      if (!playlist.getOwnerId().equals(ownerId)) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
       }
 
+      // Delete the playlist
       playlistRepository.delete(playlist);
       return ResponseEntity.noContent().build();
     } catch (Exception e) {

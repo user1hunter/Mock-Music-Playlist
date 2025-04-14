@@ -11,13 +11,10 @@ public class PlaylistDTO {
     private Long id;
     private String name;
     private String description;
-    private Long ownerId;
 
     public PlaylistDTO(Playlist playlist) {
         this.id = playlist.getId();
         this.name = playlist.getName();
         this.description = playlist.getDescription();
-        this.ownerId = playlist.getOwner().getId();
-        }
-    
+    }
 }
