@@ -1,26 +1,21 @@
 package com.example.playlistapp.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @Entity
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Table(name = "playlists") 
+@Table(name = "playlists")
 public class Playlist {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    private String name;
+    private String description;
 
-  private String name;
-
-  private String description;
-
-  // Optional: associate with user
-  @ManyToOne
-  @JoinColumn(name = "user_id")
-  private User owner;
-
+    @Column(nullable = false)
+    private Long ownerId; 
 }
