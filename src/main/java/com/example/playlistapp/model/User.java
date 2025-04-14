@@ -10,7 +10,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users") // 'user' is a reserved word in some SQL dialects
+@Table(name = "users")
 public class User {
 
   @Id
@@ -22,7 +22,7 @@ public class User {
 
   private String password;
 
-  // Optional: playlists owned by the user
-  @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
+  
+  @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
   private Set<Playlist> playlists = new HashSet<>();
 }
