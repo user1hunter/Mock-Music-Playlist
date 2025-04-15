@@ -6,6 +6,9 @@ import com.example.playlistapp.payload.LoginRequest;
 import com.example.playlistapp.payload.SignupRequest;
 import com.example.playlistapp.repository.UserRepository;
 import com.example.playlistapp.config.JwtUtils;
+import com.example.playlistapp.config.SpotifyUtils;
+import com.example.playlistapp.dto.LoginResponseDTO;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -41,10 +44,18 @@ public class AuthController {
 
       String jwt = jwtUtils.generateJwtToken(authentication);
 
-      return ResponseEntity.ok(new JwtResponse(jwt));
+      String spotifyToken;
+        try {
+            spotifyToken = SpotifyUtils.getSpotifyAccessToken();
+        } catch (Exception e) {
+            logger.error("Failed to fetch Spotify token", e);
+            spotifyToken = null; // or throw error depending on your needs
+        }
+
+      return ResponseEntity.ok(new LoginResponseDTO(jwt, spotifyToken));
     } catch (Exception e) {
       logger.error("Authentication failed", e);
-      return ResponseEntity.badRequest().body("Invalid username or password");
+      return ResponseEntity.badRequest().body("Failed to authenticate user");
     }
   }
 
