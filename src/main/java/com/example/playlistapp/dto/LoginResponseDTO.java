@@ -7,10 +7,8 @@ import lombok.Setter;
 @Setter
 public class LoginResponseDTO {
     private String jwt;
-    private String spotifyToken;
 
-    public LoginResponseDTO(String jwt, String spotifyToken) {
+    public LoginResponseDTO(String jwt) {
         this.jwt = jwt;
-        this.spotifyToken = spotifyToken;
     }
 }
