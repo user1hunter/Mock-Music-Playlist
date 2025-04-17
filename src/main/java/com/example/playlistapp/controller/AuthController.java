@@ -44,15 +44,7 @@ public class AuthController {
 
       String jwt = jwtUtils.generateJwtToken(authentication);
 
-      String spotifyToken;
-        try {
-            spotifyToken = SpotifyUtils.getSpotifyAccessToken();
-        } catch (Exception e) {
-            logger.error("Failed to fetch Spotify token", e);
-            spotifyToken = null; // or throw error depending on your needs
-        }
-
-      return ResponseEntity.ok(new LoginResponseDTO(jwt, spotifyToken));
+      return ResponseEntity.ok(new LoginResponseDTO(jwt));
     } catch (Exception e) {
       logger.error("Authentication failed", e);
       return ResponseEntity.badRequest().body("Failed to authenticate user");

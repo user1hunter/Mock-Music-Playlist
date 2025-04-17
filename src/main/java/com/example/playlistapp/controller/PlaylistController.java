@@ -1,16 +1,27 @@
 package com.example.playlistapp.controller;
 
+import com.example.playlistapp.config.SpotifyUtils;
 import com.example.playlistapp.dto.PlaylistDTO;
+import com.example.playlistapp.dto.SpotifyPlaylistDTO;
+import com.example.playlistapp.dto.SpotifyTracksDTO;
 import com.example.playlistapp.model.*;
 import com.example.playlistapp.repository.*;
 import lombok.*;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.*;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.web.bind.annotation.*;
-
+import java.net.http.HttpClient;
+import java.net.URI;
+import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.net.http.HttpRequest;
+
 
 @RestController
 @RequestMapping("/api/playlists")
@@ -22,108 +33,179 @@ public class PlaylistController {
   private final PlaylistRepository playlistRepository;
   private final UserRepository userRepository;
 
-  @GetMapping
-  public List<PlaylistDTO> getAllPlaylists(@AuthenticationPrincipal UserDetails userDetails) {
-    try {
-      Long ownerId = userRepository.findByUsername(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"))
-                .getId();
+  // @GetMapping
+  // public List<PlaylistDTO> getAllPlaylists(@AuthenticationPrincipal UserDetails userDetails) {
+  //   try {
+  //     Long ownerId = userRepository.findByUsername(userDetails.getUsername())
+  //               .orElseThrow(() -> new RuntimeException("User not found"))
+  //               .getId();
 
-      return playlistRepository.findByOwnerId(ownerId).stream()
-                .map(PlaylistDTO::new)
-                .collect(Collectors.toList());
+  //     return playlistRepository.findByOwnerId(ownerId).stream()
+  //               .map(PlaylistDTO::new)
+  //               .collect(Collectors.toList());
 
-    } catch (Exception e) {
-      logger.error("Error fetching playlists", e);
-      throw new RuntimeException("Error fetching playlists");
-    }
-  }
+  //   } catch (Exception e) {
+  //     logger.error("Error fetching playlists", e);
+  //     throw new RuntimeException("Error fetching playlists");
+  //   }
+  // }
 
-  @PostMapping
-  public ResponseEntity<PlaylistDTO> createPlaylist(@RequestBody Playlist playlist,
-      @AuthenticationPrincipal UserDetails userDetails) {
-    try {
-      Long ownerId = userRepository.findByUsername(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"))
-                .getId();
+  // @PostMapping
+  // public ResponseEntity<PlaylistDTO> addPlaylist(@RequestBody String playlistId,
+  //     @AuthenticationPrincipal UserDetails userDetails) {
+  //   try {
+  //     Long ownerId = userRepository.findByUsername(userDetails.getUsername())
+  //               .orElseThrow(() -> new RuntimeException("User not found"))
+  //               .getId();
                 
-      playlist.setOwnerId(ownerId);
-      Playlist savedPlaylist = playlistRepository.save(playlist);
-      return ResponseEntity.ok(new PlaylistDTO(savedPlaylist));
-    } catch (Exception e) {
-      logger.error("Error creating playlist", e);
-      throw new RuntimeException("Error creating playlist");
-    }
+  //     playlist.setOwnerId(ownerId);
+  //     Playlist savedPlaylist = playlistRepository.save(playlist);
+  //     return ResponseEntity.ok(new PlaylistDTO(savedPlaylist));
+  //   } catch (Exception e) {
+  //     logger.error("Error creating playlist", e);
+  //     throw new RuntimeException("Error creating playlist");
+  //   }
+  // }
+
+  @GetMapping("/spotify/{id}")
+  public ResponseEntity<?> getSpotifyPlaylists(@PathVariable String id,
+      @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+          String accessToken = SpotifyUtils.getSpotifyAccessToken();
+  
+          HttpRequest request = HttpRequest.newBuilder()
+                  .uri(URI.create("https://api.spotify.com/v1/users/" + id + "/playlists"))
+                  .header("Authorization", "Bearer " + accessToken)
+                  .header("Accept", "application/json")
+                  .GET()
+                  .build();
+  
+          logger.info("Request Headers: {}", request.headers());
+  
+          HttpClient client = HttpClient.newHttpClient();
+          HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+  
+          if (response.statusCode() == 200) {
+              logger.debug("Spotify API response: {}", response.body());
+              JSONObject jsonResponse = new JSONObject(response.body());
+              JSONArray itemsArray = jsonResponse.getJSONArray("items");
+  
+              List<SpotifyPlaylistDTO> categories = new ArrayList<>();
+              for (int i = 0; i < itemsArray.length(); i++) {
+                  JSONObject item = itemsArray.getJSONObject(i);
+                  String playlistId = item.getString("id");
+                  String name = item.getString("name");
+                  categories.add(new SpotifyPlaylistDTO(playlistId, name));
+              }
+
+              return ResponseEntity.ok(categories.stream().limit(10).collect(Collectors.toList()));
+          } else {
+              logger.debug("Spotify API response status: {}", response.statusCode());
+              logger.debug("Spotify API response body: {}", response.body());
+              logger.debug("Access Token:", accessToken);
+              throw new RuntimeException("Failed to fetch playlists: " + response.body());
+          }
+      } catch (Exception e) {
+          logger.error("Error fetching categories", e);
+          throw new RuntimeException("Error fetching categories");
+      }
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<PlaylistDTO> getById(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
-    try {
-      Playlist playlist = playlistRepository.findById(id)
-          .orElseThrow(() -> new RuntimeException("Playlist not found"));
-
-      Long ownerId = userRepository.findByUsername(userDetails.getUsername())
-          .orElseThrow(() -> new RuntimeException("User not found"))
-          .getId();
-
-      if (!playlist.getOwnerId().equals(ownerId)) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-      }
-
-      return ResponseEntity.ok(new PlaylistDTO(playlist));
-    } catch (Exception e) {
-      logger.error("Error fetching playlist", e);
-      throw new RuntimeException("Error fetching playlist");
-    }
-  }
-
-  @PutMapping("/{id}")
-  public ResponseEntity<PlaylistDTO> updatePlaylist(@PathVariable Long id, @RequestBody Playlist updatedPlaylist,
+  public ResponseEntity<?> getTracksByPlaylistId(@PathVariable String id,
       @AuthenticationPrincipal UserDetails userDetails) {
-    try {
-      Playlist playlist = playlistRepository.findById(id)
-          .orElseThrow(() -> new RuntimeException("Playlist not found"));
+        try {
+          String accessToken = SpotifyUtils.getSpotifyAccessToken();
+  
+          HttpRequest request = HttpRequest.newBuilder()
+                  .uri(URI.create("https://api.spotify.com/v1/playlists/" + id))
+                  .header("Authorization", "Bearer " + accessToken)
+                  .header("Accept", "application/json")
+                  .GET()
+                  .build();
+  
+          logger.info("Request Headers: {}", request.headers());
+  
+          HttpClient client = HttpClient.newHttpClient();
+          HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+  
+          if (response.statusCode() == 200) {
+              logger.debug("Spotify API response: {}", response.body());
+              JSONObject jsonResponse = new JSONObject(response.body());
+              JSONObject tracksObject = jsonResponse.getJSONObject("tracks");
+              JSONArray itemsArray = tracksObject.getJSONArray("items");
+  
+              List<SpotifyTracksDTO> tracks = new ArrayList<>();
+              for (int i = 0; i < itemsArray.length(); i++) {
+                  JSONObject item = itemsArray.getJSONObject(i);
+                  JSONObject track = item.getJSONObject("track");
+                  String songName = track.getString("name");
+                  JSONObject album = track.getJSONObject("album");
+                  JSONArray artist = album.getJSONArray("artists");
+                  String artistName = artist.getJSONObject(0).getString("name");
+                  tracks.add(new SpotifyTracksDTO(songName, artistName));
+              }
 
-      Long ownerId = userRepository.findByUsername(userDetails.getUsername())
-          .orElseThrow(() -> new RuntimeException("User not found"))
-          .getId();
-
-      if (!playlist.getOwnerId().equals(ownerId)) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+              return ResponseEntity.ok(tracks.stream().limit(10).collect(Collectors.toList()));
+          } else {
+              logger.debug("Spotify API response status: {}", response.statusCode());
+              logger.debug("Spotify API response body: {}", response.body());
+              logger.debug("Access Token:", accessToken);
+              throw new RuntimeException("Failed to fetch playlists: " + response.body());
+          }
+      } catch (Exception e) {
+          logger.error("Error fetching categories", e);
+          throw new RuntimeException("Error fetching categories");
       }
-      playlist.setName(updatedPlaylist.getName());
-      playlist.setDescription(updatedPlaylist.getDescription());
-
-      Playlist saved = playlistRepository.save(playlist);
-      return ResponseEntity.ok(new PlaylistDTO(saved));
-    } catch (Exception e) {
-      logger.error("Error updating playlist", e);
-      throw new RuntimeException("Error updating playlist");
-    }
   }
 
-  @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deletePlaylist(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
-    try {
-      // Fetch the playlist by ID
-      Playlist playlist = playlistRepository.findById(id)
-          .orElseThrow(() -> new RuntimeException("Playlist not found"));
+  // @PutMapping("/{id}")
+  // public ResponseEntity<PlaylistDTO> updatePlaylist(@PathVariable Long id, @RequestBody Playlist updatedPlaylist,
+  //     @AuthenticationPrincipal UserDetails userDetails) {
+  //   try {
+  //     Playlist playlist = playlistRepository.findById(id)
+  //         .orElseThrow(() -> new RuntimeException("Playlist not found"));
 
-      // Verify that the authenticated user is the owner of the playlist
-      Long ownerId = userRepository.findByUsername(userDetails.getUsername())
-          .orElseThrow(() -> new RuntimeException("User not found"))
-          .getId();
+  //     Long ownerId = userRepository.findByUsername(userDetails.getUsername())
+  //         .orElseThrow(() -> new RuntimeException("User not found"))
+  //         .getId();
 
-      if (!playlist.getOwnerId().equals(ownerId)) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-      }
+  //     if (!playlist.getOwnerId().equals(ownerId)) {
+  //       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+  //     }
+  //     playlist.setName(updatedPlaylist.getName());
+  //     playlist.setDescription(updatedPlaylist.getDescription());
 
-      // Delete the playlist
-      playlistRepository.delete(playlist);
-      return ResponseEntity.noContent().build();
-    } catch (Exception e) {
-      logger.error("Error deleting playlist", e);
-      throw new RuntimeException("Error deleting playlist");
-    }
-  }
+  //     Playlist saved = playlistRepository.save(playlist);
+  //     return ResponseEntity.ok(new PlaylistDTO(saved));
+  //   } catch (Exception e) {
+  //     logger.error("Error updating playlist", e);
+  //     throw new RuntimeException("Error updating playlist");
+  //   }
+  // }
+
+  // @DeleteMapping("/{id}")
+  // public ResponseEntity<Void> deletePlaylist(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+  //   try {
+  //     // Fetch the playlist by ID
+  //     Playlist playlist = playlistRepository.findById(id)
+  //         .orElseThrow(() -> new RuntimeException("Playlist not found"));
+
+  //     // Verify that the authenticated user is the owner of the playlist
+  //     Long ownerId = userRepository.findByUsername(userDetails.getUsername())
+  //         .orElseThrow(() -> new RuntimeException("User not found"))
+  //         .getId();
+
+  //     if (!playlist.getOwnerId().equals(ownerId)) {
+  //       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+  //     }
+
+  //     // Delete the playlist
+  //     playlistRepository.delete(playlist);
+  //     return ResponseEntity.noContent().build();
+  //   } catch (Exception e) {
+  //     logger.error("Error deleting playlist", e);
+  //     throw new RuntimeException("Error deleting playlist");
+  //   }
+  // }
 }
