@@ -33,48 +33,47 @@ public class PlaylistController {
   private final PlaylistRepository playlistRepository;
   private final UserRepository userRepository;
 
-  // @GetMapping
-  // public List<PlaylistDTO> getAllPlaylists(@AuthenticationPrincipal UserDetails userDetails) {
-  //   try {
-  //     Long ownerId = userRepository.findByUsername(userDetails.getUsername())
-  //               .orElseThrow(() -> new RuntimeException("User not found"))
-  //               .getId();
+  @GetMapping
+  public List<PlaylistDTO> getAllPlaylists(@AuthenticationPrincipal UserDetails userDetails) {
+    try {
+      Long ownerId = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"))
+                .getId();
 
-  //     return playlistRepository.findByOwnerId(ownerId).stream()
-  //               .map(PlaylistDTO::new)
-  //               .collect(Collectors.toList());
+      return playlistRepository.findByOwnerId(ownerId).stream()
+                .map(PlaylistDTO::new)
+                .collect(Collectors.toList());
 
-  //   } catch (Exception e) {
-  //     logger.error("Error fetching playlists", e);
-  //     throw new RuntimeException("Error fetching playlists");
-  //   }
-  // }
+    } catch (Exception e) {
+      logger.error("Error fetching playlists", e);
+      throw new RuntimeException("Error fetching playlists");
+    }
+  }
 
-  // @PostMapping
-  // public ResponseEntity<PlaylistDTO> addPlaylist(@RequestBody String playlistId,
-  //     @AuthenticationPrincipal UserDetails userDetails) {
-  //   try {
-  //     Long ownerId = userRepository.findByUsername(userDetails.getUsername())
-  //               .orElseThrow(() -> new RuntimeException("User not found"))
-  //               .getId();
-                
-  //     playlist.setOwnerId(ownerId);
-  //     Playlist savedPlaylist = playlistRepository.save(playlist);
-  //     return ResponseEntity.ok(new PlaylistDTO(savedPlaylist));
-  //   } catch (Exception e) {
-  //     logger.error("Error creating playlist", e);
-  //     throw new RuntimeException("Error creating playlist");
-  //   }
-  // }
-
-  @GetMapping("/spotify/{id}")
-  public ResponseEntity<?> getSpotifyPlaylists(@PathVariable String id,
+  @PostMapping
+  public ResponseEntity<PlaylistDTO> addPlaylist(@RequestBody Playlist playlist,
       @AuthenticationPrincipal UserDetails userDetails) {
+    try {
+      Long ownerId = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"))
+                .getId();
+                
+      playlist.setOwnerId(ownerId);
+      Playlist savedPlaylist = playlistRepository.save(playlist);
+      return ResponseEntity.ok(new PlaylistDTO(savedPlaylist));
+    } catch (Exception e) {
+      logger.error("Error creating playlist", e);
+      throw new RuntimeException("Error creating playlist");
+    }
+  }
+
+  @GetMapping("/spotify")
+  public ResponseEntity<?> getSpotifyPlaylists(@AuthenticationPrincipal UserDetails userDetails) {
         try {
           String accessToken = SpotifyUtils.getSpotifyAccessToken();
   
           HttpRequest request = HttpRequest.newBuilder()
-                  .uri(URI.create("https://api.spotify.com/v1/users/" + id + "/playlists"))
+                  .uri(URI.create("https://api.spotify.com/v1/users/314xqsp77xvfpta7e3uwaj6ury5e/playlists"))
                   .header("Authorization", "Bearer " + accessToken)
                   .header("Accept", "application/json")
                   .GET()
@@ -159,53 +158,25 @@ public class PlaylistController {
       }
   }
 
-  // @PutMapping("/{id}")
-  // public ResponseEntity<PlaylistDTO> updatePlaylist(@PathVariable Long id, @RequestBody Playlist updatedPlaylist,
-  //     @AuthenticationPrincipal UserDetails userDetails) {
-  //   try {
-  //     Playlist playlist = playlistRepository.findById(id)
-  //         .orElseThrow(() -> new RuntimeException("Playlist not found"));
+  @DeleteMapping("/{playlistId}")
+  public ResponseEntity<Void> deletePlaylist(@PathVariable Long playlistId, @AuthenticationPrincipal UserDetails userDetails) {
+    try {
+      Playlist playlist = playlistRepository.findById(playlistId)
+          .orElseThrow(() -> new RuntimeException("Playlist not found"));
 
-  //     Long ownerId = userRepository.findByUsername(userDetails.getUsername())
-  //         .orElseThrow(() -> new RuntimeException("User not found"))
-  //         .getId();
+      Long ownerId = userRepository.findByUsername(userDetails.getUsername())
+          .orElseThrow(() -> new RuntimeException("User not found"))
+          .getId();
 
-  //     if (!playlist.getOwnerId().equals(ownerId)) {
-  //       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-  //     }
-  //     playlist.setName(updatedPlaylist.getName());
-  //     playlist.setDescription(updatedPlaylist.getDescription());
+      if (!playlist.getOwnerId().equals(ownerId)) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+      }
 
-  //     Playlist saved = playlistRepository.save(playlist);
-  //     return ResponseEntity.ok(new PlaylistDTO(saved));
-  //   } catch (Exception e) {
-  //     logger.error("Error updating playlist", e);
-  //     throw new RuntimeException("Error updating playlist");
-  //   }
-  // }
-
-  // @DeleteMapping("/{id}")
-  // public ResponseEntity<Void> deletePlaylist(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
-  //   try {
-  //     // Fetch the playlist by ID
-  //     Playlist playlist = playlistRepository.findById(id)
-  //         .orElseThrow(() -> new RuntimeException("Playlist not found"));
-
-  //     // Verify that the authenticated user is the owner of the playlist
-  //     Long ownerId = userRepository.findByUsername(userDetails.getUsername())
-  //         .orElseThrow(() -> new RuntimeException("User not found"))
-  //         .getId();
-
-  //     if (!playlist.getOwnerId().equals(ownerId)) {
-  //       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-  //     }
-
-  //     // Delete the playlist
-  //     playlistRepository.delete(playlist);
-  //     return ResponseEntity.noContent().build();
-  //   } catch (Exception e) {
-  //     logger.error("Error deleting playlist", e);
-  //     throw new RuntimeException("Error deleting playlist");
-  //   }
-  // }
+      playlistRepository.delete(playlist);
+      return ResponseEntity.noContent().build();
+    } catch (Exception e) {
+      logger.error("Error deleting playlist", e);
+      throw new RuntimeException("Error deleting playlist");
+    }
+  }
 }

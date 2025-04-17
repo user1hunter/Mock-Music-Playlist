@@ -22,7 +22,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     User user = userRepository.findByUsername(username)
         .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-    // Return user details without authorities
     return new org.springframework.security.core.userdetails.User(
         user.getUsername(),
         user.getPassword(),

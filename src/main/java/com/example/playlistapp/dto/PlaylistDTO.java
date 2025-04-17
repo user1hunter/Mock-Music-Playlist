@@ -10,11 +10,11 @@ import lombok.Setter;
 public class PlaylistDTO {
     private Long id;
     private String name;
-    private String description;
+    private String spotifyPlaylistId;
 
     public PlaylistDTO(Playlist playlist) {
         this.id = playlist.getId();
         this.name = playlist.getName();
-        this.description = playlist.getDescription();
+        this.spotifyPlaylistId = playlist.getSpotifyPlaylistId();
     }
 }
