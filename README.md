@@ -17,6 +17,11 @@ A simple RESTful app built with Spring Boot, using:
 - H2 Database
 - Maven
 
+## v2 version is up
+- The v2 version is up!
+- Checkout the spotifyCompatible branch to utilize the console ui app and add playlists directly from Spotify!
+- Here is the link for the Console UI app! https://github.com/nathanelmer/Mock-Music-Playlist-Console-UI
+
 ## 🚀 Getting Started
 
 1. Clone the repo:
