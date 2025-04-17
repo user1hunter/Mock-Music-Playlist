@@ -30,16 +30,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
 
     String authHeader = request.getHeader("Authorization");
-    logger.debug("Authorization Header: " + authHeader);
     String token = null;
     String username = null;
 
     if (authHeader != null && authHeader.startsWith("Bearer ")) {
       token = authHeader.substring(7);
-      logger.debug("Extracted Token: " + token);
       if (jwtUtils.validateJwtToken(token)) {
         username = jwtUtils.getUsernameFromToken(token);
-        logger.debug("Extracted Username: " + username);
+        logger.debug("Extracted Username From Token: " + username);
       } else {
         logger.warn("Invalid JWT token");
       }
