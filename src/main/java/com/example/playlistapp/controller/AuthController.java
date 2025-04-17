@@ -34,16 +34,18 @@ public class AuthController {
   @PostMapping("/login")
   public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
     try {
-
+      logger.info("Authenticating user: {}", loginRequest.getUsername());
       Authentication authentication = authenticationManager.authenticate(
           new UsernamePasswordAuthenticationToken(
               loginRequest.getUsername(),
               loginRequest.getPassword()));
+      logger.debug("Authentication successful for user: {}", loginRequest.getUsername());
 
       SecurityContextHolder.getContext().setAuthentication(authentication);
+      logger.debug("Security context updated for user: {}", loginRequest.getUsername());
 
       String jwt = jwtUtils.generateJwtToken(authentication);
-
+      logger.debug("JWT generated for user: {}", loginRequest.getUsername());
       return ResponseEntity.ok(new LoginResponseDTO(jwt));
     } catch (Exception e) {
       logger.error("Authentication failed", e);
@@ -53,16 +55,19 @@ public class AuthController {
 
   @PostMapping("/register")
   public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signupRequest) {
+    logger.info("Registering user: {}", signupRequest.getUsername());
     try {
 
       if (userRepository.existsByUsername(signupRequest.getUsername())) {
         return ResponseEntity.badRequest().body("Username is already taken");
       }
+      logger.debug("Username is available: {}", signupRequest.getUsername());
 
       User user = new User();
       user.setUsername(signupRequest.getUsername());
       user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
       userRepository.save(user);
+      logger.debug("User saved: {}", signupRequest.getUsername());
 
       return ResponseEntity.ok("User registered successfully!");
     } catch (Exception e) {

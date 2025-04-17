@@ -6,7 +6,6 @@ A simple RESTful app built with Spring Boot, using:
 - CRUD for music playlists
 - JWT-based authentication
 - Maven for build
-- Logging via SLF4J
 
 ## 🔧 Tech Stack
 
@@ -23,21 +22,20 @@ A simple RESTful app built with Spring Boot, using:
 
 2. Run it:
 
+3. Clone and run the Java Console UI that can be found here https://github.com/nathanelmer/Mock-Music-Playlist-Console-UI
+
 ## 🔐 Authentication
-- Go to Swagger Page http://localhost:8080/swagger-ui/index.html *Refer to swagger for Request Body
-- Register: `/api/auth/register` *Enter any username and password
-- Login: `/api/auth/login` *Copy the JWT
-- Use JWT token in Header `Authorization: Bearer <token>` for secured endpoints
+- Utilizes JWT for user authentication 
+- Utilizes Spotify Token for Spotify endpoints
 
 ## 📬 Endpoints
 
-| Method | Endpoint            | Description          |
-| ------ | ------------------- | -------------------- |
-| POST   | /api/playlists      | Create new playlist  |
-| GET    | /api/playlists      | Get all playlists    |
-| GET    | /api/playlists/{id} | Get a playlist by ID |
-| PUT    | /api/playlists/{id} | Update playlist      |
-| DELETE | /api/playlists/{id} | Delete playlist      |
+| Method | Endpoint               | Description          |
+| ------ | -------------------    | -------------------- |
+| POST   | /api/playlists/{id}    | Add playlist         |
+| GET    | /api/playlists         | Get all playlists    |
+| GET    | /api/playlists/spotify | Get a playlist by ID |
+| DELETE | /api/playlists/{id}    | Delete playlist      |
 
 3. H2 Console:
 - Use H2 Console to verify data
@@ -47,5 +45,4 @@ A simple RESTful app built with Spring Boot, using:
 
 ## 🗒️ Notes
 
-- Use Postman or curl to test endpoints.
 - Tokens expire after a set period.
